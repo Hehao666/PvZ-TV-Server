@@ -33,51 +33,133 @@ public class Room {
         this.createdAtMillis = System.currentTimeMillis();
     }
 
-    public int getId() { return id; }
-    public String getName() { return name; }
-    public ClientHandler getHost() { return host; }
-    public int getProtocolVersion() { return protocolVersion; }
-    public long getCreatedAtMillis() { return createdAtMillis; }
-    public ClientHandler getGuest() { return guest; }
-    public void setGuest(ClientHandler g) { this.guest = g; }
+    public int getId() {
+        return id;
+    }
 
-    public boolean isGaming() { return gaming; }
-    public void setGaming(boolean v) { this.gaming = v; }
+    public String getName() {
+        return name;
+    }
 
-    public boolean isFull() { return host != null && guest != null; }
+    public ClientHandler getHost() {
+        return host;
+    }
 
-    public boolean isP2pNegotiating() { return p2pNegotiating; }
-    public void setP2pNegotiating(boolean v) { this.p2pNegotiating = v; }
+    public int getProtocolVersion() {
+        return protocolVersion;
+    }
 
-    public boolean isP2pEstablished() { return p2pEstablished; }
-    public void setP2pEstablished(boolean v) { this.p2pEstablished = v; }
+    public long getCreatedAtMillis() {
+        return createdAtMillis;
+    }
 
-    public boolean isRelayMode() { return relayMode; }
-    public void setRelayMode(boolean v) { this.relayMode = v; }
+    public ClientHandler getGuest() {
+        return guest;
+    }
 
-    public int getRelayEpoch() { return relayEpoch; }
-    public void setRelayEpoch(int relayEpoch) { this.relayEpoch = relayEpoch; }
+    public void setGuest(ClientHandler g) {
+        this.guest = g;
+    }
 
-    public boolean isHostRelayReady() { return hostRelayReady; }
-    public void setHostRelayReady(boolean hostRelayReady) { this.hostRelayReady = hostRelayReady; }
+    public boolean isGaming() {
+        return gaming;
+    }
 
-    public boolean isGuestRelayReady() { return guestRelayReady; }
-    public void setGuestRelayReady(boolean guestRelayReady) { this.guestRelayReady = guestRelayReady; }
+    public void setGaming(boolean v) {
+        this.gaming = v;
+    }
 
-    public boolean isRelayDataOpen() { return relayDataOpen; }
-    public void setRelayDataOpen(boolean relayDataOpen) { this.relayDataOpen = relayDataOpen; }
+    public boolean isFull() {
+        return host != null && guest != null;
+    }
 
-    public int getP2pAttempt() { return p2pAttempt; }
-    public void setP2pAttempt(int p2pAttempt) { this.p2pAttempt = p2pAttempt; }
+    public boolean isP2pNegotiating() {
+        return p2pNegotiating;
+    }
 
-    public boolean isP2pReprobePending() { return p2pReprobePending; }
-    public void setP2pReprobePending(boolean p2pReprobePending) { this.p2pReprobePending = p2pReprobePending; }
+    public void setP2pNegotiating(boolean v) {
+        this.p2pNegotiating = v;
+    }
 
-    public boolean isSpectateAllowed() { return spectateAllowed; }
-    public void setSpectateAllowed(boolean spectateAllowed) { this.spectateAllowed = spectateAllowed; }
+    public boolean isP2pEstablished() {
+        return p2pEstablished;
+    }
 
-    public boolean isForceRelay() { return forceRelay; }
-    public void setForceRelay(boolean forceRelay) { this.forceRelay = forceRelay; }
+    public void setP2pEstablished(boolean v) {
+        this.p2pEstablished = v;
+    }
+
+    public boolean isRelayMode() {
+        return relayMode;
+    }
+
+    public void setRelayMode(boolean v) {
+        this.relayMode = v;
+    }
+
+    public int getRelayEpoch() {
+        return relayEpoch;
+    }
+
+    public void setRelayEpoch(int relayEpoch) {
+        this.relayEpoch = relayEpoch;
+    }
+
+    public boolean isHostRelayReady() {
+        return hostRelayReady;
+    }
+
+    public void setHostRelayReady(boolean hostRelayReady) {
+        this.hostRelayReady = hostRelayReady;
+    }
+
+    public boolean isGuestRelayReady() {
+        return guestRelayReady;
+    }
+
+    public void setGuestRelayReady(boolean guestRelayReady) {
+        this.guestRelayReady = guestRelayReady;
+    }
+
+    public boolean isRelayDataOpen() {
+        return relayDataOpen;
+    }
+
+    public void setRelayDataOpen(boolean relayDataOpen) {
+        this.relayDataOpen = relayDataOpen;
+    }
+
+    public int getP2pAttempt() {
+        return p2pAttempt;
+    }
+
+    public void setP2pAttempt(int p2pAttempt) {
+        this.p2pAttempt = p2pAttempt;
+    }
+
+    public boolean isP2pReprobePending() {
+        return p2pReprobePending;
+    }
+
+    public void setP2pReprobePending(boolean p2pReprobePending) {
+        this.p2pReprobePending = p2pReprobePending;
+    }
+
+    public boolean isSpectateAllowed() {
+        return spectateAllowed;
+    }
+
+    public void setSpectateAllowed(boolean spectateAllowed) {
+        this.spectateAllowed = spectateAllowed;
+    }
+
+    public boolean isForceRelay() {
+        return forceRelay;
+    }
+
+    public void setForceRelay(boolean forceRelay) {
+        this.forceRelay = forceRelay;
+    }
 
     public synchronized void addSpectator(ClientHandler c) {
         if (c == null || spectators.contains(c)) return;

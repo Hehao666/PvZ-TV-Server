@@ -3,7 +3,8 @@ package org.marshive;
 import java.io.*;
 
 public final class Proto {
-    private Proto() {}
+    private Proto() {
+    }
 
     public static int readU8(InputStream in) throws IOException {
         int b = in.read();

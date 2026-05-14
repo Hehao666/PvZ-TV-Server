@@ -1,6 +1,7 @@
 package org.marshive;
 
 import javax.swing.*;
+
 import java.awt.*;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -244,7 +245,10 @@ public class TestClientFrame extends JFrame {
     }
 
     private void disconnect(String why) {
-        try { if (socket != null) socket.close(); } catch (Exception ignored) {}
+        try {
+            if (socket != null) socket.close();
+        } catch (Exception ignored) {
+        }
         socket = null;
         in = null;
         out = null;
@@ -267,9 +271,18 @@ public class TestClientFrame extends JFrame {
     }
 
     private void closeP2PResources() {
-        try { if (p2pSocket != null) p2pSocket.close(); } catch (Exception ignored) {}
-        try { if (pendingP2PSocket != null) pendingP2PSocket.close(); } catch (Exception ignored) {}
-        try { if (p2pListener != null) p2pListener.close(); } catch (Exception ignored) {}
+        try {
+            if (p2pSocket != null) p2pSocket.close();
+        } catch (Exception ignored) {
+        }
+        try {
+            if (pendingP2PSocket != null) pendingP2PSocket.close();
+        } catch (Exception ignored) {
+        }
+        try {
+            if (p2pListener != null) p2pListener.close();
+        } catch (Exception ignored) {
+        }
         p2pSocket = null;
         pendingP2PSocket = null;
         p2pListener = null;
@@ -711,7 +724,10 @@ public class TestClientFrame extends JFrame {
                 log("P2P outbound connected to " + peerIp + ":" + peerPort);
                 return outbound;
             } catch (IOException ignored) {
-                try { outbound.close(); } catch (IOException ignored2) {}
+                try {
+                    outbound.close();
+                } catch (IOException ignored2) {
+                }
             }
 
             try {
@@ -748,7 +764,10 @@ public class TestClientFrame extends JFrame {
     }
 
     private void closePendingP2POnly() {
-        try { if (pendingP2PSocket != null) pendingP2PSocket.close(); } catch (IOException ignored) {}
+        try {
+            if (pendingP2PSocket != null) pendingP2PSocket.close();
+        } catch (IOException ignored) {
+        }
         pendingP2PSocket = null;
     }
 
@@ -847,28 +866,15 @@ public class TestClientFrame extends JFrame {
         }
     }
 
-    static class RoomItem {
-        final int roomId;
-        final String name;
-        final boolean full;
-        final boolean gaming;
-        final int version;
-
-        RoomItem(int roomId, String name, boolean full, boolean gaming, int version) {
-            this.roomId = roomId;
-            this.name = name;
-            this.full = full;
-            this.gaming = gaming;
-            this.version = version;
-        }
+    record RoomItem(int roomId, String name, boolean full, boolean gaming, int version) {
 
         @Override
-        public String toString() {
-            String s = name + " (id=" + roomId + ")";
-            if (gaming) s += " [GAMING]";
-            else if (full) s += " [FULL]";
-            if (version != NETPLAY_VERSION) s += " [VER " + version + "]";
-            return s;
+            public String toString() {
+                String s = name + " (id=" + roomId + ")";
+                if (gaming) s += " [GAMING]";
+                else if (full) s += " [FULL]";
+                if (version != NETPLAY_VERSION) s += " [VER " + version + "]";
+                return s;
+            }
         }
-    }
 }

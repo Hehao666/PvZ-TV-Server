@@ -35,7 +35,9 @@ public class RoomManager {
         return r;
     }
 
-    public Room getRoom(int id) { return rooms.get(id); }
+    public Room getRoom(int id) {
+        return rooms.get(id);
+    }
 
     public synchronized boolean joinRoom(int id, ClientHandler guest) {
         Room r = rooms.get(id);
@@ -60,7 +62,9 @@ public class RoomManager {
         if (r != null) System.out.println("[shard=" + shardId + "] Room Removed: " + id);
     }
 
-    public Iterable<Room> allRooms() { return rooms.values(); }
+    public Iterable<Room> allRooms() {
+        return rooms.values();
+    }
 
     public int removeStaleNotGamingRooms(long nowMillis, long ttlMillis) {
         List<Integer> toRemove = new ArrayList<>();

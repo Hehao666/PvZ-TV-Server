@@ -2,9 +2,13 @@ package org.marshive;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.BufferedReader;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -12,11 +16,11 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class ServerApp {
     private static final int DEFAULT_BASE_PORT = 8888;
     private static final int DEFAULT_SHARD_COUNT = 4;
+    private static final int PROBE2_PORT_OFFSET = 1004;
     private static final long STALE_ROOM_TTL_MS = 20L * 60L * 1000L;
     private static final long ROOM_CLEAN_INTERVAL_MS = 60_000L;
 
@@ -59,7 +63,17 @@ public class ServerApp {
             System.out.println("[FATAL] Probe port range overflow: " + probeBasePort + " ~ " + lastProbePort);
             return;
         }
-        int probeBasePort2 = probeBasePort + shardCount;
+        int metricsPort = basePort + 3000;
+        if (metricsPort <= 0 || metricsPort > 65535) {
+            System.out.println("[FATAL] Metrics port overflow: " + metricsPort);
+            return;
+        }
+        int dashboardPort = basePort + 4000;
+        if (dashboardPort <= 0 || dashboardPort > 65535) {
+            System.out.println("[FATAL] Dashboard port overflow: " + dashboardPort);
+            return;
+        }
+        int probeBasePort2 = basePort + PROBE2_PORT_OFFSET;
         int lastProbePort2 = probeBasePort2 + shardCount - 1;
         if (probeBasePort2 <= 0 || lastProbePort2 > 65535) {
             System.out.println("[FATAL] Probe2 port range overflow: " + probeBasePort2 + " ~ " + lastProbePort2);
@@ -68,7 +82,7 @@ public class ServerApp {
 
         System.out.println(">>> NIO Game Server Started on Ports: " +
                 basePort + " ~ " + lastPort +
-                " (base=" + basePort + ", shards=" + shardCount + ", probeBase1=" + probeBasePort + ", probeBase2=" + probeBasePort2 + ")");
+                " (base=" + basePort + ", shards=" + shardCount + ", probeBase1=" + probeBasePort + ", probeBase2=" + probeBasePort2 + ", metricsPort=" + metricsPort + ", dashboardPort=" + dashboardPort + ")");
 
         Selector selector = Selector.open();
         RoomManager[] rms = new RoomManager[shardCount];
@@ -89,9 +103,10 @@ public class ServerApp {
             startProbeThread(probePort, 1);
             startProbeThread(probePort2, 2);
         }
+        startMetricsThread(metricsPort);
+        DashboardServer.start(dashboardPort);
 
         long lastRoomCleanAt = System.currentTimeMillis();
-
         while (true) {
             selector.select(500);
             long now = System.currentTimeMillis();
@@ -130,8 +145,7 @@ public class ServerApp {
 
             for (SelectionKey key : selector.keys()) {
                 Object att = key.attachment();
-                if (!(att instanceof ClientHandler)) continue;
-                ClientHandler h = (ClientHandler) att;
+                if (!(att instanceof ClientHandler h)) continue;
                 if (h.isClosed()) continue;
                 try {
                     h.onTick(now);
@@ -150,6 +164,7 @@ public class ServerApp {
                 }
                 lastRoomCleanAt = now;
             }
+
         }
     }
 
@@ -176,6 +191,37 @@ public class ServerApp {
         t.start();
     }
 
+    private static void startMetricsThread(int metricsPort) {
+        Thread t = new Thread(() -> {
+            try (ServerSocket ss = new ServerSocket(metricsPort)) {
+                while (true) {
+                    Socket s = ss.accept();
+                    s.setTcpNoDelay(true);
+                    try (Socket metricsSocket = s) {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(metricsSocket.getInputStream(), StandardCharsets.UTF_8));
+                        OutputStream out = metricsSocket.getOutputStream();
+                        String req = reader.readLine();
+                        String resp;
+                        if (req != null && req.startsWith("SETTLE|")) {
+                            resp = AnalyticsCollector.ingestSettlement(req) + "\n";
+                        } else {
+                            resp = AnalyticsCollector.snapshotSummary() + "\n";
+                        }
+                        byte[] payload = resp.getBytes(StandardCharsets.UTF_8);
+                        out.write(payload);
+                        out.flush();
+                    } catch (IOException ignored) {
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println("[METRICS@" + metricsPort + "] crashed: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }, "metrics-" + metricsPort);
+        t.setDaemon(false);
+        t.start();
+    }
+
     private static int parseIntSafe(String s, int fallback) {
         try {
             return Integer.parseInt(s);
@@ -184,15 +230,6 @@ public class ServerApp {
         }
     }
 
-    private static final class ShardBinding {
-        final int shardId;
-        final int probePort;
-        final int probePort2;
-
-        private ShardBinding(int shardId, int probePort, int probePort2) {
-            this.shardId = shardId;
-            this.probePort = probePort;
-            this.probePort2 = probePort2;
-        }
+    private record ShardBinding(int shardId, int probePort, int probePort2) {
     }
 }
