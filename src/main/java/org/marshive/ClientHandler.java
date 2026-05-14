@@ -384,6 +384,7 @@ public class ClientHandler {
             host.sendFrame(RespType.GUEST_JOINED.code, p);
         }
         logGuestFlow("JOINED", currentRoom, this);
+        broadcastSpectateState(currentRoom);
         sendRoomProbeState(currentRoom);
         broadcastSpectatorList(currentRoom);
     }
@@ -431,7 +432,17 @@ public class ClientHandler {
         }
         currentRoom.setSpectateAllowed(allow);
         currentRoom.setForceRelay(allow);
-        sendSpectateState(currentRoom);
+        if (!allow) {
+            for (ClientHandler s : currentRoom.snapshotSpectators()) {
+                if (s == null) continue;
+                try { s.sendFrame(RespType.ROOM_EXITED.code, null); } catch (IOException ignored) {}
+                s.currentRoom = null;
+                s.isHost = false;
+                s.isSpectator = false;
+                currentRoom.removeSpectator(s);
+            }
+        }
+        broadcastSpectateState(currentRoom);
         broadcastSpectatorList(currentRoom);
     }
 
@@ -849,6 +860,23 @@ public class ClientHandler {
         payload[4] = (byte) (room.isSpectateAllowed() ? 1 : 0);
         payload[5] = (byte) (room.isForceRelay() ? 1 : 0);
         sendFrame(RespType.SPECTATE_STATE.code, payload);
+    }
+
+    private void broadcastSpectateState(Room room) {
+        if (room == null) return;
+        byte[] payload = new byte[6];
+        writeIntTo(payload, 0, room.getId());
+        payload[4] = (byte) (room.isSpectateAllowed() ? 1 : 0);
+        payload[5] = (byte) (room.isForceRelay() ? 1 : 0);
+
+        ClientHandler host = room.getHost();
+        ClientHandler guest = room.getGuest();
+        if (host != null && !host.closed) {
+            try { host.sendFrame(RespType.SPECTATE_STATE.code, payload); } catch (IOException ignored) {}
+        }
+        if (guest != null && !guest.closed) {
+            try { guest.sendFrame(RespType.SPECTATE_STATE.code, payload); } catch (IOException ignored) {}
+        }
     }
 
     private void broadcastSpectatorList(Room room) {
