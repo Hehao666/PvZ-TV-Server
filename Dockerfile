@@ -1,13 +1,15 @@
-# 换成完美支持 arm64 的 focal(Ubuntu) 或 standard 镜像
 FROM eclipse-temurin:17-jre-focal
 WORKDIR /app
 
-# 创建目录
+# 创建所需目录
 RUN mkdir -p /app/lib /app/data
 
-# 复制宿主机编译好的 jar 包
+# 1. 精准复制主 Jar 包
 COPY target/*.jar /app/lib/PvZ-TV-server.jar
-COPY target/lib/* /app/lib/ 2>/dev/null || true
+
+# 2. 安全地复制可选的 lib 目录（优雅兼容没有 lib 目录的情况）
+# 利用 Docker 的通配符特性：如果 target/ 目录下没有 lib 文件夹，这一行会被自动忽略而不会报错
+COPY target/li[b]/ /app/lib/
 
 EXPOSE 26667
 EXPOSE 8080
