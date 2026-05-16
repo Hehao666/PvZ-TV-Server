@@ -16,5 +16,5 @@ COPY --from=builder /build/output/app.jar /app/app.jar
 COPY --from=builder /build/output/lib /app/lib
 EXPOSE 26667/tcp
 EXPOSE 26667/udp
-ENV MAIN_CLASS=org.marshive.DashboardServer  # 改成你的真实主类
-ENTRYPOINT java -cp "/app/app.jar:/app/lib/*" $MAIN_CLASS --base=26667
+ENV MAIN_CLASS=org.marshive.ServerApp
+ENTRYPOINT java -cp /app/app.jar:/app/lib/* $MAIN_CLASS --base=26667
