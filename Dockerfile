@@ -1,24 +1,24 @@
-# ============ 第一阶段：Maven 构建 ============
 FROM maven:3.9-eclipse-temurin-17 AS builder
 WORKDIR /build
 COPY pom.xml .
+# 先下载依赖
 RUN mvn dependency:go-offline -B
 COPY src ./src
-RUN mvn clean package -DskipTests -B
-# 将 target 下的第一个 JAR 复制并重命名为 app.jar，避免文件名不通配问题
-RUN cp "$(ls /build/target/*.jar | head -1)" /build/app.jar
+# 将依赖复制到 lib 目录
+RUN mvn dependency:copy-dependencies -DoutputDirectory=lib
+# 打包项目类 JAR，并指定 finalName 为 app
+RUN mvn package -DskipTests -B -DfinalName=app
+# 此时 target/app.jar 就是项目自身的 JAR
+# 将 lib 和 JAR 准备好
+RUN mkdir /build/output
+RUN cp target/app.jar /build/output/
+RUN cp -r lib /build/output/lib
 
-# ============ 第二阶段：运行镜像 ============
 FROM eclipse-temurin:17-jre-focal
 WORKDIR /app
-RUN mkdir -p /app/lib /app/data
-COPY --from=builder /build/app.jar /app/lib/PvZ-TV-server.jar
-WORKDIR /app/data
+RUN mkdir -p /app/data
+COPY --from=builder /build/output/app.jar /app/app.jar
+COPY --from=builder /build/output/lib /app/lib
 EXPOSE 26667/tcp
 EXPOSE 26667/udp
-
-# 主类名通过环境变量配置（需自行替换为真实主类）
-ENV MAIN_CLASS=org.marshive.DashboardServer
-
-# 使用 java -cp 启动，避开 manifest 缺失问题
-ENTRYPOINT java -cp /app/lib/PvZ-TV-server.jar $MAIN_CLASS --base=26667
+ENTRYPOINT ["java", "-cp", "/app/app.jar:/app/lib/*", "org.marshive.DashboardServer", "--base=26667"]
