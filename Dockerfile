@@ -1,30 +1,22 @@
-# 多阶段构建
-FROM maven:3.9-eclipse-temurin-17 AS builder
-
-WORKDIR /build
-COPY pom.xml .
-RUN mvn dependency:go-offline
-
-COPY src ./src
+# 阶段一：构建
+FROM maven:3.8.5-openjdk-17 AS builder
+WORKDIR /app
+COPY . .
 RUN mvn clean package -DskipTests
 
-# 运行阶段 - 使用支持多架构的镜像
-FROM eclipse-temurin:17-jre
-
+# 阶段二：运行
+FROM openjdk:17-jdk-slim
 WORKDIR /app
+# 从构建阶段复制 jar 包
+COPY --from=builder /app/target/PvZ-TV-server.jar app.jar
 
-# 安装工具（使用 apt）
-RUN apt-get update && \
-    apt-get install -y sqlite3 curl bash && \
-    rm -rf /var/lib/apt/lists/*
+# 创建数据挂载目录
+RUN mkdir -p /app/data
 
-COPY --from=builder /build/target/PvZ-TV-server*.jar /app/app.jar
+# 暴露服务端口（假设游戏服务默认端口是 26667，Dashboard 端口假设为 8080，请按实际修改）
+EXPOSE 26667
+EXPOSE 8080
 
-RUN mkdir -p /app/data /app/logs
-
-EXPOSE 26667 8080
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:26667/health || exit 1
-
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# 启动命令：默认运行游戏服务器，把 db 文件指定到 /app/data 目录下（这里假设你的程序支持指定 db 路径，或者默认在当前目录）
+ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["--base=26667"]
