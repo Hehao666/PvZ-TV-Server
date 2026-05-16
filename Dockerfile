@@ -1,20 +1,21 @@
-FROM maven:3.9-eclipse-temurin-17 AS builder
-WORKDIR /build
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
-COPY src ./src
-RUN mvn dependency:copy-dependencies -DoutputDirectory=lib
-RUN mvn package -DskipTests -B -DfinalName=app
-RUN mkdir /build/output
-RUN cp target/app.jar /build/output/
-RUN cp -r lib /build/output/lib
+FROM eclipse-temurin:17-jre-alpine
 
-FROM eclipse-temurin:17-jre-focal
+# 安装工具
+RUN apk add --no-cache sqlite bash curl
+
 WORKDIR /app
-RUN mkdir -p /app/data
-COPY --from=builder /build/output/app.jar /app/app.jar
-COPY --from=builder /build/output/lib /app/lib
-EXPOSE 26667/tcp
-EXPOSE 26667/udp
-ENV MAIN_CLASS=org.marshive.ServerApp
-ENTRYPOINT java -cp /app/app.jar:/app/lib/* $MAIN_CLASS --base=26667
+
+# 直接复制 jar 文件
+COPY target/PvZ-TV-server.jar /app/app.jar
+
+# 创建数据目录
+RUN mkdir -p /app/data /app/logs
+
+EXPOSE 26667 8080
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:26667/health || exit 1
+
+# 使用 exec 形式支持参数传递
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
