@@ -4,16 +4,15 @@ COPY pom.xml .
 RUN mvn dependency:go-offline -B
 COPY src ./src
 RUN mvn clean package -DskipTests -B
+# 调试输出，确保 JAR 生成
+RUN ls -la /build/target/
 
 FROM eclipse-temurin:17-jre-focal
 WORKDIR /app
-# 把 JAR 放到 lib 子目录，避免被挂载覆盖
-COPY --from=builder /build/target/PvZ-TV-Server-*.jar ./lib/PvZ-TV-server.jar
-# 创建专门存放数据库的目录
-RUN mkdir -p /app/data
-# 将工作目录切换到 data，程序启动后 db 文件会生成在此处
+RUN mkdir -p /app/lib /app/data
+# 精确复制 JAR（注意大小写）
+COPY --from=builder /build/target/PvZ-TV-Server-1.0-SNAPSHOT.jar /app/lib/PvZ-TV-server.jar
 WORKDIR /app/data
 EXPOSE 26667/tcp
 EXPOSE 26667/udp
-# 用绝对路径执行 JAR
 ENTRYPOINT ["java", "-jar", "/app/lib/PvZ-TV-server.jar", "--base=26667"]
